@@ -6,7 +6,7 @@ from autogpt.json_utils.json_fix_llm import fix_json_using_multiple_techniques
 from autogpt.json_utils.utilities import LLM_DEFAULT_RESPONSE_FORMAT, validate_json
 from autogpt.llm import chat_with_ai, create_chat_completion, create_chat_message
 from autogpt.llm.token_counter import count_string_tokens
-from autogpt.logs import logger, print_assistant_thoughts
+from autogpt.logs import logger, print_assistant_thoughts, send_assistant_thoughts_to_discord
 from autogpt.speech import say_text
 from autogpt.spinner import Spinner
 from autogpt.utils import clean_input
@@ -69,7 +69,7 @@ class Agent:
         self.triggering_prompt = triggering_prompt
         self.workspace = Workspace(workspace_directory, cfg.restrict_to_workspace)
 
-    def start_interaction_loop(self):
+    async def start_interaction_loop(self, discord_message = None):
         # Interaction Loop
         cfg = Config()
         loop_count = 0
@@ -88,6 +88,7 @@ class Agent:
                 logger.typewriter_log(
                     "Continuous Limit Reached: ", Fore.YELLOW, f"{cfg.continuous_limit}"
                 )
+                await discord_message.channel.send(f'Continuous Limit Reached: {cfg.continuous_limit}')
                 break
             # Send message to AI, get response
             with Spinner("Thinking... "):
@@ -114,6 +115,7 @@ class Agent:
                     print_assistant_thoughts(
                         self.ai_name, assistant_reply_json, cfg.speak_mode
                     )
+                    await send_assistant_thoughts_to_discord(self.ai_name, assistant_reply_json, discord_message)
                     command_name, arguments = get_command(assistant_reply_json)
                     if cfg.speak_mode:
                         say_text(f"I want to execute {command_name}")
@@ -134,6 +136,7 @@ class Agent:
                     f"COMMAND = {Fore.CYAN}{command_name}{Style.RESET_ALL}  "
                     f"ARGUMENTS = {Fore.CYAN}{arguments}{Style.RESET_ALL}",
                 )
+                await discord_message.channel.send(f'NEXT ACTION: COMMAND = {command_name} ARGUMENTS = {arguments} \n ############################################## \n')
 
                 logger.info(
                     "Enter 'y' to authorise command, 'y -N' to run N continuous commands, 's' to run self-feedback commands"
@@ -211,7 +214,9 @@ class Agent:
                     f"COMMAND = {Fore.CYAN}{command_name}{Style.RESET_ALL}"
                     f"  ARGUMENTS = {Fore.CYAN}{arguments}{Style.RESET_ALL}",
                 )
-
+                await discord_message.channel.send(f'NEXT ACTION: COMMAND = {command_name} ARGUMENTS = {arguments} \n ------------------------------------ \n')
+                if loop_count != cfg.continuous_limit:
+                     await discord_message.channel.send(f'LOOP COUNT: {loop_count + 1}, THINKING...')
             # Execute command
             if command_name is not None and command_name.lower().startswith("error"):
                 result = (

@@ -11,7 +11,7 @@ from autogpt.config import Config, check_openai_api_key
 from autogpt.configurator import create_config
 from autogpt.logs import logger
 from autogpt.memory import get_memory
-from autogpt.plugins import scan_plugins
+#from autogpt.plugins import scan_plugins
 from autogpt.prompts.prompt import DEFAULT_TRIGGERING_PROMPT, construct_main_ai_config
 from autogpt.utils import (
     get_current_git_branch,
@@ -22,22 +22,28 @@ from autogpt.workspace import Workspace
 from scripts.install_plugin_deps import install_plugin_dependencies
 
 
-def run_auto_gpt(
-    continuous: bool,
-    continuous_limit: int,
-    ai_settings: str,
-    skip_reprompt: bool,
-    speak: bool,
-    debug: bool,
-    gpt3only: bool,
-    gpt4only: bool,
-    memory_type: str,
-    browser_name: str,
-    allow_downloads: bool,
-    skip_news: bool,
-    workspace_directory: str,
-    install_plugin_deps: bool,
+async def run_auto_gpt(
+    continuous = False,
+    continuous_limit = 10,
+    ai_settings = None,
+    skip_reprompt = False,
+    speak = False,
+    debug = False,
+    gpt3only = False,
+    gpt4only = False,
+    memory_type = None,
+    browser_name = None,
+    allow_downloads = False,
+    skip_news = True,
+    workspace_directory = None,
+    install_plugin_deps = False,
+    ai_name = None,
+    ai_role = None,
+    ai_goals = None,
+    ai_buget = 0.0,
+    discord_message = None,
 ):
+    await discord_message.channel.send(f' AI Name: {ai_name}, AI Role: {ai_role}, AI Goal: {ai_goals[0]}, Continuous limit: {continuous_limit}\nLOOP COUNT: 1, THINKING...')
     # Configure logging before we do anything else.
     logger.set_level(logging.DEBUG if debug else logging.INFO)
     logger.speak_mode = speak
@@ -115,13 +121,13 @@ def run_auto_gpt(
 
     cfg.file_logger_path = str(file_logger_path)
 
-    cfg.set_plugins(scan_plugins(cfg, cfg.debug_mode))
+   # cfg.set_plugins(scan_plugins(cfg, cfg.debug_mode))
     # Create a CommandRegistry instance and scan default folder
     command_registry = CommandRegistry()
     command_registry.import_commands("autogpt.commands.analyze_code")
     command_registry.import_commands("autogpt.commands.audio_text")
     command_registry.import_commands("autogpt.commands.execute_code")
-    command_registry.import_commands("autogpt.commands.file_operations")
+   # command_registry.import_commands("autogpt.commands.file_operations")
     command_registry.import_commands("autogpt.commands.git_operations")
     command_registry.import_commands("autogpt.commands.google_search")
     command_registry.import_commands("autogpt.commands.image_gen")
@@ -131,8 +137,7 @@ def run_auto_gpt(
     command_registry.import_commands("autogpt.commands.write_tests")
     command_registry.import_commands("autogpt.app")
 
-    ai_name = ""
-    ai_config = construct_main_ai_config()
+    ai_config = construct_main_ai_config(ai_name, ai_role, ai_goals, ai_buget)
     ai_config.command_registry = command_registry
     # print(prompt)
     # Initialize variables
@@ -166,6 +171,6 @@ def run_auto_gpt(
         config=ai_config,
         system_prompt=system_prompt,
         triggering_prompt=DEFAULT_TRIGGERING_PROMPT,
-        workspace_directory=workspace_directory,
+        workspace_directory=workspace_directory
     )
-    agent.start_interaction_loop()
+    await agent.start_interaction_loop(discord_message)

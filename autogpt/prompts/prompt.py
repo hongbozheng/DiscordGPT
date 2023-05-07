@@ -79,13 +79,16 @@ def build_default_prompt_generator() -> PromptGenerator:
     return prompt_generator
 
 
-def construct_main_ai_config() -> AIConfig:
+def construct_main_ai_config(ai_name = None, ai_role = None, ai_goals = None, ai_buget = 0.0) -> AIConfig:
     """Construct the prompt for the AI to respond to
 
     Returns:
         str: The prompt string
     """
-    config = AIConfig.load(CFG.ai_settings_file)
+    if(ai_name == None or ai_role == None or ai_goals == None):
+        config = AIConfig.load(CFG.ai_settings_file)
+    else:
+        config = AIConfig(ai_name, ai_role, ai_goals, ai_buget)
     if CFG.skip_reprompt and config.ai_name:
         logger.typewriter_log("Name :", Fore.GREEN, config.ai_name)
         logger.typewriter_log("Role :", Fore.GREEN, config.ai_role)

@@ -61,7 +61,7 @@ import click
     help="Installs external dependencies for 3rd party plugins.",
 )
 @click.pass_context
-def main(
+async def main(
     ctx: click.Context,
     continuous: bool,
     continuous_limit: int,
@@ -85,9 +85,8 @@ def main(
     """
     # Put imports inside function to avoid importing everything when starting the CLI
     from autogpt.main import run_auto_gpt
-
     if ctx.invoked_subcommand is None:
-        run_auto_gpt(
+       await run_auto_gpt(
             continuous,
             continuous_limit,
             ai_settings,

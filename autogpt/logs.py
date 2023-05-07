@@ -258,3 +258,38 @@ def print_assistant_thoughts(
     # Speak the assistant's thoughts
     if speak_mode and assistant_thoughts_speak:
         say_text(assistant_thoughts_speak)
+
+async def send_assistant_thoughts_to_discord(
+    ai_name: object,
+    assistant_reply_json_valid: object,
+    discord_message: object = None,
+) -> None:
+    assistant_thoughts_reasoning = None
+    assistant_thoughts_plan = None
+    assistant_thoughts_criticism = None
+
+    assistant_thoughts = assistant_reply_json_valid.get("thoughts", {})
+    assistant_thoughts_text = assistant_thoughts.get("text")
+    if assistant_thoughts:
+        assistant_thoughts_reasoning = assistant_thoughts.get("reasoning")
+        assistant_thoughts_plan = assistant_thoughts.get("plan")
+        assistant_thoughts_criticism = assistant_thoughts.get("criticism")
+
+    message = f"{ai_name.upper()} THOUGHTS: {assistant_thoughts_text} \n"
+    message += f"REASONING: {assistant_thoughts_reasoning} \n"
+    if assistant_thoughts_plan:
+        logger.typewriter_log("PLAN:", Fore.YELLOW, "")
+        message += "PLAN: \n"
+        # If it's a list, join it into a string
+        if isinstance(assistant_thoughts_plan, list):
+            assistant_thoughts_plan = "\n".join(assistant_thoughts_plan)
+        elif isinstance(assistant_thoughts_plan, dict):
+            assistant_thoughts_plan = str(assistant_thoughts_plan)
+
+        # Split the input_string using the newline character and dashes
+        lines = assistant_thoughts_plan.split("\n")
+        for line in lines:
+            line = line.lstrip("- ")
+            message += f"- {line.strip()} \n"
+    message += f"CRITICISM: {assistant_thoughts_criticism} \n"
+    await discord_message.channel.send(message)

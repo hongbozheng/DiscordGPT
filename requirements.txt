@@ -36,7 +36,8 @@ gitpython==3.1.31
 auto-gpt-plugin-template
 mkdocs
 pymdown-extensions
-
+azure-functions
+discord
 
 # OpenAI and Generic plugins import
 openapi-python-client==0.13.4
@@ -53,3 +54,4 @@ pytest-integration
 pytest-mock
 vcrpy
 pytest-recording
+
